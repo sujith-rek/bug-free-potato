@@ -1,6 +1,7 @@
 import os
 import subprocess
 import readline
+import rlcompleter
 from colorama import Fore, Style, init
 
 # Initialize colorama
@@ -30,6 +31,7 @@ def save_history():
 # Execute a command
 def execute_command(command):
     try:
+        # Run the command and capture output
         result = subprocess.run(command, shell=True, text=True, capture_output=True)
         if result.stdout:
             print(result.stdout, end="")
@@ -51,7 +53,7 @@ def run_init_scripts():
 # Custom commands logic
 def custom_commands(command):
     if command.lower() == "ls":
-        # Execute `dir` instead of `ls`
+        # Execute dir instead of ls
         execute_command("dir")
         return True
     elif command.lower() in ["clear", "cls"]:
@@ -81,10 +83,28 @@ def reverse_search():
     except Exception as e:
         print(Fore.RED + f"Error during reverse search: {e}")
 
+# Command auto-completion setup
+def setup_auto_completion():
+    def completer(text, state):
+        # A function to fetch matching commands for auto-completion
+        options = [readline.get_history_item(i)
+                   for i in range(1, readline.get_current_history_length() + 1)
+                   if readline.get_history_item(i) and readline.get_history_item(i).startswith(text)]
+        return options[state] if state < len(options) else None
+
+    readline.set_completer(completer)
+    readline.parse_and_bind("tab: complete")
+
 # Main function
 def main():
+    # Greeting
     print(Fore.CYAN + "Custom Shell (type 'exit' to quit)")
+
+    # Load command history
     load_history()
+
+    # Setup auto-completion
+    setup_auto_completion()
 
     # Run initialization scripts
     run_init_scripts()
@@ -101,14 +121,19 @@ def main():
                     print(Fore.CYAN + "Exiting shell.")
                     break
 
+                # Add command to history
+                readline.add_history(command)
+
                 # Execute custom commands or system command
                 if not custom_commands(command):
                     execute_command(command)
-            except KeyboardInterrupt:
-                print(Fore.CYAN + "\nExiting shell.")
+            except KeyboardInterrupt:  # Handle Ctrl+C
+                print(Fore.YELLOW + "\nExiting shell.")
                 break
     finally:
+        # Save shell history
         save_history()
 
+# Entry point
 if __name__ == "__main__":
     main()

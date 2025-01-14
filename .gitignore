@@ -1,3 +1,6 @@
 .venv
 .idea
-*.txt
+history.txt
+dist
+build
+*.spec
